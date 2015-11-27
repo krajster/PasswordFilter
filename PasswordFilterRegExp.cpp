@@ -1,8 +1,5 @@
 #include "stdafx.h"
-#include <atlbase.h>
 #include <regex>
-#include <atlconv.h>
-#include <AtlBase.h>
 
 #define MAX_REGEX_LENGTH 4096
 
@@ -181,10 +178,5 @@ BOOLEAN __stdcall PasswordFilter(
 		delete[] wszPassword;
 		wszPassword = NULL;
 	}
-	USES_CONVERSION;
-	LPCSTR bwstrPassword = W2CT (wstrPassword.c_str());
-	_bstr_t bwszPassword = wszPassword;
-	OutputDebugString(bwstrPassword);
-	OutputDebugString(bwszPassword);
 	return bMatch;
 }
