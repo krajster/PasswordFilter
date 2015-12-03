@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <atlbase.h>
 #include <regex>
 
 #define MAX_REGEX_LENGTH 4096
@@ -121,62 +122,26 @@ BOOLEAN __stdcall PasswordFilter(
 	BOOLEAN SetOperation
 	)
 {
-	wchar_t* wszPassword = NULL;
-	wstring wstrPassword;
+	wstring wstrPassword(Password->Buffer, Password->Length / sizeof(wchar_t));
 	bool bMatch = FALSE;
-	try
-	{
-		wszPassword = new wchar_t[Password->Length + 1];
-		if (NULL == wszPassword)
-		{
-			throw E_OUTOFMEMORY;
-		}
-		wcsncpy_s(wszPassword, Password->Length, Password->Buffer, _TRUNCATE);
+	
+	// Prepare iterator
+	wstring::const_iterator start = wstrPassword.begin();
+	wstring::const_iterator end = wstrPassword.end();
+
+	match_results<wstring::const_iterator> what;
+	
+	// Validate password against regular expression
+	wregex wrePassword(DEFAULT_REGEX);
+	GetPasswordRegExFromRegistry(wrePassword);
+	bMatch = regex_match(start, end, what, wrePassword);
 		
-		wszPassword[Password->Length] = 0;
-
-		wstrPassword = wszPassword;
-
-		// Prepare iterator
-		wstring::const_iterator start = wstrPassword.begin();
-		wstring::const_iterator end = wstrPassword.end();
-
-		match_results<wstring::const_iterator> what;
-
-		// Validate password against regular expression
-
-		wregex wrePassword(DEFAULT_REGEX);
-
-		GetPasswordRegExFromRegistry(wrePassword);
-
-		bMatch = regex_match(start, end, what, wrePassword);
-		if (bMatch)
-		{
-		}
-		
-		{
-		}
-		throw S_OK;
-	}
-	catch (HRESULT)
-	{
-	}
-	catch (...)
-	{
-	}
+					
 	// Erase all temporary password data
 	// for security reasons
 	wstrPassword.replace(0, wstrPassword.length(), wstrPassword.length(), (wchar_t)'?');
 	wstrPassword.erase();
-	if (NULL != wszPassword)
-	{
-		ZeroMemory(wszPassword, Password->Length);
-		// Assure that there is no compiler optimizations and read random byte
-		// from cleaned password string
-		srand((unsigned int)time(NULL));
-		wchar_t wch = wszPassword[rand() % Password->Length];
-		delete[] wszPassword;
-		wszPassword = NULL;
-	}
+	SecureZeroMemory(Password->Buffer, Password->Length);
+		
 	return bMatch;
 }
